@@ -27,9 +27,12 @@ import com.example.ui.theme.*
 import java.text.SimpleDateFormat
 import java.util.Locale
 
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Notifications
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HistoryScreen(viewModel: MainViewModel) {
+fun HistoryScreen(viewModel: MainViewModel, onOpenDrawer: () -> Unit) {
     val transactions by viewModel.transactions.collectAsState()
     var showResetDialog by remember { mutableStateOf(false) }
 
@@ -68,13 +71,21 @@ fun HistoryScreen(viewModel: MainViewModel) {
         containerColor = FintechBackground,
         topBar = { 
             TopAppBar(
-                title = { Text("Transaction History", fontWeight = FontWeight.Bold, color = FintechOnSurface) },
+                title = { Text("Transactions", fontWeight = FontWeight.Bold, color = FintechOnSurface) },
+                navigationIcon = {
+                    IconButton(onClick = onOpenDrawer) {
+                        Icon(Icons.Filled.Menu, contentDescription = "Menu", tint = FintechOnSurface)
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = FintechBackground),
                 actions = {
                     if (transactions.isNotEmpty()) {
                         IconButton(onClick = { showResetDialog = true }) {
                             Icon(Icons.Filled.Delete, contentDescription = "Reset All", tint = FintechError.copy(alpha = 0.8f))
                         }
+                    }
+                    IconButton(onClick = {}) {
+                        Icon(Icons.Filled.Notifications, contentDescription = "Notifications", tint = FintechOnSurface)
                     }
                 }
             ) 

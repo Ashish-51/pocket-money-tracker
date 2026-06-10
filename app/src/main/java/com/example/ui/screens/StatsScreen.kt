@@ -24,9 +24,12 @@ import com.example.ui.theme.*
 import java.text.SimpleDateFormat
 import java.util.Locale
 
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Notifications
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun StatsScreen(viewModel: MainViewModel) {
+fun StatsScreen(viewModel: MainViewModel, onOpenDrawer: () -> Unit) {
     val transactions by viewModel.transactions.collectAsState()
     
     val dateFormatter = remember { SimpleDateFormat("MMMM yyyy", Locale.getDefault()) }
@@ -75,6 +78,16 @@ fun StatsScreen(viewModel: MainViewModel) {
         topBar = { 
             TopAppBar(
                 title = { Text("Statistics", fontWeight = FontWeight.Bold, color = FintechOnSurface) },
+                navigationIcon = {
+                    IconButton(onClick = onOpenDrawer) {
+                        Icon(Icons.Filled.Menu, contentDescription = "Menu", tint = FintechOnSurface)
+                    }
+                },
+                actions = {
+                    IconButton(onClick = {}) {
+                        Icon(Icons.Filled.Notifications, contentDescription = "Notifications", tint = FintechOnSurface)
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = FintechBackground)
             ) 
         }

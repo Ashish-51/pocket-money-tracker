@@ -15,9 +15,13 @@ import androidx.compose.ui.unit.sp
 import com.example.viewmodel.MainViewModel
 import com.example.ui.theme.*
 
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Notifications
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(viewModel: MainViewModel) {
+fun SettingsScreen(viewModel: MainViewModel, onOpenDrawer: () -> Unit) {
     val currency by viewModel.currency.collectAsState()
     val userProfile by viewModel.currentUserProfile.collectAsState()
     val email = userProfile?.email ?: ""
@@ -30,6 +34,16 @@ fun SettingsScreen(viewModel: MainViewModel) {
         topBar = { 
             TopAppBar(
                 title = { Text("Settings", fontWeight = FontWeight.Bold, color = FintechOnSurface) },
+                navigationIcon = {
+                    IconButton(onClick = onOpenDrawer) {
+                        Icon(Icons.Filled.Menu, contentDescription = "Menu", tint = FintechOnSurface)
+                    }
+                },
+                actions = {
+                    IconButton(onClick = {}) {
+                        Icon(Icons.Filled.Notifications, contentDescription = "Notifications", tint = FintechOnSurface)
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = FintechBackground)
             ) 
         }

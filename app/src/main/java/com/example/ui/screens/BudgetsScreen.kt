@@ -30,9 +30,12 @@ import com.example.data.TransactionType
 import java.util.Date
 import java.util.Calendar
 
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Notifications
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BudgetsScreen(viewModel: MainViewModel) {
+fun BudgetsScreen(viewModel: MainViewModel, onOpenDrawer: () -> Unit) {
     val recurring by viewModel.recurringTransactions.collectAsState()
     var showAddRecurring by remember { mutableStateOf(false) }
     var editingRtx by remember { mutableStateOf<RecurringTransaction?>(null) }
@@ -42,6 +45,16 @@ fun BudgetsScreen(viewModel: MainViewModel) {
         topBar = { 
             TopAppBar(
                 title = { Text("Subscriptions", fontWeight = FontWeight.Bold, color = FintechOnSurface) },
+                navigationIcon = {
+                    IconButton(onClick = onOpenDrawer) {
+                        Icon(Icons.Filled.Menu, contentDescription = "Menu", tint = FintechOnSurface)
+                    }
+                },
+                actions = {
+                    IconButton(onClick = {}) {
+                        Icon(Icons.Filled.Notifications, contentDescription = "Notifications", tint = FintechOnSurface)
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = FintechBackground)
             ) 
         },
