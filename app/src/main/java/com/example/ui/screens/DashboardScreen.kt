@@ -88,6 +88,9 @@ fun DashboardScreen(viewModel: MainViewModel, onOpenDrawer: () -> Unit, onSeeAll
                 HeaderSection(name = nameToShow, initials = initials)
             }
             item {
+                NotificationPermissionCard()
+            }
+            item {
                 BalanceCard(
                     balance = currentBalance,
                     income = totalIncome,
