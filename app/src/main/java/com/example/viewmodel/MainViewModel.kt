@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
@@ -253,6 +254,23 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _searchQuery = MutableStateFlow("")
     val searchQuery = _searchQuery.asStateFlow()
 
+    val notifications = recurringTransactions.map { list ->
+        val now = Date()
+        val cal = Calendar.getInstance()
+        cal.add(Calendar.DAY_OF_YEAR, 3) // 3 days ahead
+        val threshold = cal.time
+
+        list.filter { rtx ->
+            val nextDate = rtx.nextProcessingDate.toDate()
+            nextDate.after(now) && nextDate.before(threshold)
+        }.map { rtx ->
+            val symbol = if (_currency.value == "INR") "₹" else "$"
+            val amountStr = "$symbol${String.format("%.2f", rtx.amount)}"
+            val sdf = java.text.SimpleDateFormat("MMM dd", java.util.Locale.getDefault())
+            "Upcoming payment for ${rtx.category}: $amountStr on ${sdf.format(rtx.nextProcessingDate.toDate())}"
+        }
+    }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+
     private val _filterCategory = MutableStateFlow<String?>(null)
     val filterCategory = _filterCategory.asStateFlow()
     
@@ -297,18 +315,41 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         repository.deleteBudget(budgetId)
     }
 
-    fun addRecurringTransaction(amount: Double, type: TransactionType, category: String, note: String, paymentMethod: String, interval: String, nextProcDate: Date) = viewModelScope.launch {
-        repository.addRecurringTransaction(
-            com.example.data.RecurringTransaction(
-                amount = amount,
-                type = type,
-                category = category,
-                note = note,
-                paymentMethod = paymentMethod,
-                interval = interval,
-                nextProcessingDate = Timestamp(nextProcDate)
+    fun addRecurringTransaction(amount: Double, type: TransactionType, category: String, note: String, paymentMethod: String, interval: String, nextProcDate: Date) {
+        viewModelScope.launch {
+            repository.addTransaction(
+                Transaction(
+                    amount = amount,
+                    type = type,
+                    category = category,
+                    note = note,
+                    paymentMethod = paymentMethod,
+                    timestamp = Timestamp(nextProcDate)
+                )
             )
-        )
+        }
+        
+        viewModelScope.launch {
+            val cal = java.util.Calendar.getInstance()
+            cal.time = nextProcDate
+            when (interval) {
+                "Monthly" -> cal.add(java.util.Calendar.MONTH, 1)
+                "Yearly" -> cal.add(java.util.Calendar.YEAR, 1)
+                else -> cal.add(java.util.Calendar.MONTH, 1)
+            }
+            
+            repository.addRecurringTransaction(
+                com.example.data.RecurringTransaction(
+                    amount = amount,
+                    type = type,
+                    category = category,
+                    note = note,
+                    paymentMethod = paymentMethod,
+                    interval = interval,
+                    nextProcessingDate = Timestamp(cal.time)
+                )
+            )
+        }
     }
 
     fun deleteRecurringTransaction(recurringId: String) = viewModelScope.launch {

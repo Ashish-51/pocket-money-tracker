@@ -84,9 +84,7 @@ fun HistoryScreen(viewModel: MainViewModel, onOpenDrawer: () -> Unit) {
                             Icon(Icons.Filled.Delete, contentDescription = "Reset All", tint = FintechError.copy(alpha = 0.8f))
                         }
                     }
-                    IconButton(onClick = {}) {
-                        Icon(Icons.Filled.Notifications, contentDescription = "Notifications", tint = FintechOnSurface)
-                    }
+                    NotificationIcon(viewModel = viewModel)
                 }
             ) 
         }

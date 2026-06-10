@@ -40,9 +40,7 @@ fun SettingsScreen(viewModel: MainViewModel, onOpenDrawer: () -> Unit) {
                     }
                 },
                 actions = {
-                    IconButton(onClick = {}) {
-                        Icon(Icons.Filled.Notifications, contentDescription = "Notifications", tint = FintechOnSurface)
-                    }
+                    NotificationIcon(viewModel = viewModel)
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = FintechBackground)
             ) 

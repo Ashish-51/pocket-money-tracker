@@ -51,9 +51,7 @@ fun BudgetsScreen(viewModel: MainViewModel, onOpenDrawer: () -> Unit) {
                     }
                 },
                 actions = {
-                    IconButton(onClick = {}) {
-                        Icon(Icons.Filled.Notifications, contentDescription = "Notifications", tint = FintechOnSurface)
-                    }
+                    NotificationIcon(viewModel = viewModel)
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = FintechBackground)
             ) 
@@ -81,7 +79,7 @@ fun BudgetsScreen(viewModel: MainViewModel, onOpenDrawer: () -> Unit) {
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     item { Spacer(modifier = Modifier.height(16.dp)) }
-                    items(recurring) { rtx ->
+                    items(recurring, key = { it.recurringId }) { rtx ->
                         RecurringItem(
                             rtx = rtx,
                             formatter = { viewModel.formatAmount(it) },
@@ -165,17 +163,14 @@ fun RecurringItem(rtx: com.example.data.RecurringTransaction, formatter: (Double
 fun AddRecurringDialog(onDismiss: () -> Unit, onAdd: (Double, com.example.data.TransactionType, String, String, String, String, java.util.Date) -> Unit) {
     var amountStr by remember { mutableStateOf("") }
     var note by remember { mutableStateOf("") }
-    var type by remember { mutableStateOf(com.example.data.TransactionType.EXPENSE) }
-    var category by remember { mutableStateOf("Food") }
+    val type = com.example.data.TransactionType.EXPENSE
+    val category = "Subscription"
     var paymentMethod by remember { mutableStateOf("Cash") }
     var interval by remember { mutableStateOf("Monthly") }
     
-    val intervals = listOf("Daily", "Weekly", "Monthly", "Yearly")
-    val incomeCategories = listOf("Salary", "Allowance", "Other")
-    val expenseCategories = listOf("Food", "Bills", "Rent", "Subscriptions", "Other")
+    val intervals = listOf("Monthly", "Yearly")
     val paymentMethods = listOf("Cash", "Card", "UPI", "Bank Transfer")
 
-    var expandedCat by remember { mutableStateOf(false) }
     var expandedInt by remember { mutableStateOf(false) }
     var expandedPay by remember { mutableStateOf(false) }
 
@@ -184,22 +179,9 @@ fun AddRecurringDialog(onDismiss: () -> Unit, onAdd: (Double, com.example.data.T
         containerColor = FintechSurface,
         titleContentColor = FintechOnSurface,
         textContentColor = FintechOnSurfaceVariant,
-        title = { Text("Add Recurring Tx", fontWeight = FontWeight.Bold) },
+        title = { Text("Add Subscription", fontWeight = FontWeight.Bold) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                    FilterChip(
-                        selected = type == com.example.data.TransactionType.INCOME,
-                        onClick = { type = com.example.data.TransactionType.INCOME; category = incomeCategories.first() },
-                        label = { Text("Income") }
-                    )
-                    FilterChip(
-                        selected = type == com.example.data.TransactionType.EXPENSE,
-                        onClick = { type = com.example.data.TransactionType.EXPENSE; category = expenseCategories.first() },
-                        label = { Text("Expense") }
-                    )
-                }
-
                 OutlinedTextField(
                     value = amountStr,
                     onValueChange = { amountStr = it },
@@ -211,33 +193,9 @@ fun AddRecurringDialog(onDismiss: () -> Unit, onAdd: (Double, com.example.data.T
                 OutlinedTextField(
                     value = note,
                     onValueChange = { note = it },
-                    label = { Text("Service Name (e.g. Netflix, Rent)") },
+                    label = { Text("Service Name (e.g. Netflix)") },
                     modifier = Modifier.fillMaxWidth()
                 )
-
-                ExposedDropdownMenuBox(
-                    expanded = expandedCat,
-                    onExpandedChange = { expandedCat = !expandedCat }
-                ) {
-                    OutlinedTextField(
-                        value = category,
-                        onValueChange = {},
-                        readOnly = true,
-                        label = { Text("Category") },
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedCat) },
-                        modifier = Modifier.menuAnchor().fillMaxWidth()
-                    )
-                    ExposedDropdownMenu(
-                        expanded = expandedCat,
-                        onDismissRequest = { expandedCat = false },
-                        modifier = Modifier.background(FintechSurface)
-                    ) {
-                        val cats = if (type == com.example.data.TransactionType.INCOME) incomeCategories else expenseCategories
-                        cats.forEach { cat ->
-                            DropdownMenuItem(text = { Text(cat, color = FintechOnSurface) }, onClick = { category = cat; expandedCat = false })
-                        }
-                    }
-                }
 
                 ExposedDropdownMenuBox(
                     expanded = expandedInt,
@@ -307,17 +265,14 @@ fun AddRecurringDialog(onDismiss: () -> Unit, onAdd: (Double, com.example.data.T
 fun EditRecurringDialog(rtx: com.example.data.RecurringTransaction, onDismiss: () -> Unit, onSave: (com.example.data.RecurringTransaction) -> Unit) {
     var amountStr by remember { mutableStateOf(if (rtx.amount % 1.0 == 0.0) rtx.amount.toInt().toString() else rtx.amount.toString()) }
     var note by remember { mutableStateOf(rtx.note) }
-    var type by remember { mutableStateOf(rtx.type) }
-    var category by remember { mutableStateOf(rtx.category) }
+    val type = com.example.data.TransactionType.EXPENSE
+    val category = "Subscription"
     var paymentMethod by remember { mutableStateOf(rtx.paymentMethod) }
     var interval by remember { mutableStateOf(rtx.interval) }
     
-    val intervals = listOf("Daily", "Weekly", "Monthly", "Yearly")
-    val incomeCategories = listOf("Salary", "Allowance", "Other")
-    val expenseCategories = listOf("Food", "Bills", "Rent", "Subscriptions", "Other")
+    val intervals = listOf("Monthly", "Yearly")
     val paymentMethods = listOf("Cash", "Card", "UPI", "Bank Transfer")
 
-    var expandedCat by remember { mutableStateOf(false) }
     var expandedInt by remember { mutableStateOf(false) }
     var expandedPay by remember { mutableStateOf(false) }
 
@@ -326,22 +281,9 @@ fun EditRecurringDialog(rtx: com.example.data.RecurringTransaction, onDismiss: (
         containerColor = FintechSurface,
         titleContentColor = FintechOnSurface,
         textContentColor = FintechOnSurfaceVariant,
-        title = { Text("Edit Recurring Tx", fontWeight = FontWeight.Bold) },
+        title = { Text("Edit Subscription", fontWeight = FontWeight.Bold) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                    FilterChip(
-                        selected = type == com.example.data.TransactionType.INCOME,
-                        onClick = { type = com.example.data.TransactionType.INCOME; category = incomeCategories.first() },
-                        label = { Text("Income") }
-                    )
-                    FilterChip(
-                        selected = type == com.example.data.TransactionType.EXPENSE,
-                        onClick = { type = com.example.data.TransactionType.EXPENSE; category = expenseCategories.first() },
-                        label = { Text("Expense") }
-                    )
-                }
-
                 OutlinedTextField(
                     value = amountStr,
                     onValueChange = { amountStr = it },
@@ -353,33 +295,9 @@ fun EditRecurringDialog(rtx: com.example.data.RecurringTransaction, onDismiss: (
                 OutlinedTextField(
                     value = note,
                     onValueChange = { note = it },
-                    label = { Text("Service Name (e.g. Netflix, Rent)") },
+                    label = { Text("Service Name (e.g. Netflix)") },
                     modifier = Modifier.fillMaxWidth()
                 )
-
-                ExposedDropdownMenuBox(
-                    expanded = expandedCat,
-                    onExpandedChange = { expandedCat = !expandedCat }
-                ) {
-                    OutlinedTextField(
-                        value = category,
-                        onValueChange = {},
-                        readOnly = true,
-                        label = { Text("Category") },
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedCat) },
-                        modifier = Modifier.menuAnchor().fillMaxWidth()
-                    )
-                    ExposedDropdownMenu(
-                        expanded = expandedCat,
-                        onDismissRequest = { expandedCat = false },
-                        modifier = Modifier.background(FintechSurface)
-                    ) {
-                        val cats = if (type == com.example.data.TransactionType.INCOME) incomeCategories else expenseCategories
-                        cats.forEach { cat ->
-                            DropdownMenuItem(text = { Text(cat, color = FintechOnSurface) }, onClick = { category = cat; expandedCat = false })
-                        }
-                    }
-                }
 
                 ExposedDropdownMenuBox(
                     expanded = expandedInt,
