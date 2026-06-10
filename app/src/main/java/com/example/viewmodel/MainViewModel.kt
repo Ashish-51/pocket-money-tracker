@@ -1,0 +1,248 @@
+package com.example.viewmodel
+
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.data.FirebaseRepository
+import com.example.data.Goal
+import com.example.data.Transaction
+import com.example.data.TransactionType
+import com.example.data.User
+import com.google.firebase.FirebaseApp
+import com.google.firebase.Timestamp
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.launch
+import java.util.Calendar
+import java.util.Date
+
+class MainViewModel(application: Application) : AndroidViewModel(application) {
+    private val repository = FirebaseRepository()
+    private val sharedPrefs = application.getSharedPreferences("pocket_money_prefs", android.content.Context.MODE_PRIVATE)
+
+    // Auth States
+    private val _authState = MutableStateFlow<AuthState>(AuthState.Loading)
+    val authState = _authState.asStateFlow()
+
+    private val _authError = MutableStateFlow<String?>(null)
+    val authError = _authError.asStateFlow()
+
+    private val _currentUserId = MutableStateFlow<String?>(null)
+    
+    private val _currentUserProfile = MutableStateFlow<User?>(null)
+    val currentUserProfile = _currentUserProfile.asStateFlow()
+
+    // Currency Selection
+    private val _currency = MutableStateFlow(sharedPrefs.getString("currency", "USD") ?: "USD")
+    val currency = _currency.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            repository.getAuthUserFlow().collect { firebaseUser ->
+                if (firebaseUser != null) {
+                    _currentUserId.value = firebaseUser.uid
+                    val profile = repository.getUserProfile(firebaseUser.uid)
+                    
+                    val fallbackName = firebaseUser.email?.substringBefore("@")?.split(Regex("[._]"))?.joinToString(" ") { it.replaceFirstChar { c -> c.uppercase() } } ?: "User"
+                    val nameFromAuth = if (firebaseUser.displayName.isNullOrBlank()) fallbackName else firebaseUser.displayName
+                    
+                    if (profile != null) {
+                        val finalName = if (profile.name == "User" || profile.name.isBlank()) nameFromAuth else profile.name
+                        _currentUserProfile.value = profile.copy(name = finalName!!)
+                    } else {
+                        _currentUserProfile.value = User(
+                            userId = firebaseUser.uid,
+                            name = nameFromAuth!!,
+                            email = firebaseUser.email ?: ""
+                        )
+                    }
+                    _authState.value = AuthState.Authenticated
+                } else {
+                    _currentUserId.value = null
+                    _currentUserProfile.value = null
+                    _authState.value = AuthState.Unauthenticated
+                }
+            }
+        }
+    }
+
+    fun login(email: String, pass: String) = viewModelScope.launch {
+        _authState.value = AuthState.Loading
+        _authError.value = null
+        val result = repository.login(email, pass)
+        if (result.isFailure) {
+            _authState.value = AuthState.Unauthenticated
+            _authError.value = result.exceptionOrNull()?.message ?: "Login failed"
+        } else {
+            refreshUserProfile()
+        }
+    }
+
+    fun signup(name: String, email: String, pass: String) = viewModelScope.launch {
+        _authState.value = AuthState.Loading
+        _authError.value = null
+        val result = repository.signup(name, email, pass)
+        if (result.isFailure) {
+            _authState.value = AuthState.Unauthenticated
+            _authError.value = result.exceptionOrNull()?.message ?: "Signup failed"
+        } else {
+            refreshUserProfile()
+        }
+    }
+
+    fun loginWithGoogle(idToken: String) = viewModelScope.launch {
+        _authState.value = AuthState.Loading
+        _authError.value = null
+        val result = repository.loginWithGoogle(idToken)
+        if (result.isFailure) {
+            _authState.value = AuthState.Unauthenticated
+            _authError.value = result.exceptionOrNull()?.message ?: "Google Sign-In failed"
+        } else {
+            refreshUserProfile()
+        }
+    }
+
+    private fun refreshUserProfile() = viewModelScope.launch {
+        val uid = repository.currentUserId
+        if (uid != null) {
+            _currentUserId.value = uid
+            val profile = repository.getUserProfile(uid)
+            val authUser = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser
+            
+            if (profile != null) {
+                val nameFromAuth = authUser?.let { 
+                    val fallback = it.email?.substringBefore("@")?.split(Regex("[._]"))?.joinToString(" ") { p -> p.replaceFirstChar { c -> c.uppercase() } } ?: "User"
+                    if (it.displayName.isNullOrBlank()) fallback else it.displayName
+                } ?: "User"
+                
+                val finalName = if (profile.name == "User" || profile.name.isBlank()) nameFromAuth else profile.name
+                _currentUserProfile.value = profile.copy(name = finalName!!)
+            } else if (authUser != null) {
+                val fallbackName = authUser.email?.substringBefore("@")?.split(Regex("[._]"))?.joinToString(" ") { it.replaceFirstChar { c -> c.uppercase() } } ?: "User"
+                val name = if (authUser.displayName.isNullOrBlank()) fallbackName else authUser.displayName
+                _currentUserProfile.value = User(
+                    userId = authUser.uid,
+                    name = name!!,
+                    email = authUser.email ?: ""
+                )
+            }
+            _authState.value = AuthState.Authenticated
+        }
+    }
+
+    fun logout() {
+        _authState.value = AuthState.Loading
+        repository.logout()
+    }
+
+    fun resetPassword(email: String) = viewModelScope.launch {
+        val result = repository.resetPassword(email)
+        if (result.isFailure) {
+            _authError.value = result.exceptionOrNull()?.message ?: "Reset failed"
+        } else {
+            _authError.value = "Password reset email sent."
+        }
+    }
+
+    fun clearError() {
+        _authError.value = null
+    }
+
+    fun setError(error: String) {
+        _authError.value = error
+    }
+
+    fun setCurrency(curr: String) {
+        _currency.value = curr
+        sharedPrefs.edit().putString("currency", curr).apply()
+    }
+
+    fun formatAmount(amount: Double): String {
+        val symbol = if (currency.value == "INR") "₹" else "$"
+        return "$symbol${String.format("%.2f", amount)}"
+    }
+
+    fun formatAmountNoDecimals(amount: Double): String {
+        val symbol = if (currency.value == "INR") "₹" else "$"
+        return "$symbol${String.format("%.0f", amount)}"
+    }
+
+    // Data Flows
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    val transactions: StateFlow<List<Transaction>> = _currentUserId
+        .flatMapLatest { uid ->
+            if (uid != null) {
+                repository.getTransactions(uid)
+            } else {
+                flowOf(emptyList())
+            }
+        }
+        .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    val goals: StateFlow<List<Goal>> = _currentUserId
+        .flatMapLatest { uid ->
+            if (uid != null) {
+                repository.getGoals(uid)
+            } else {
+                flowOf(emptyList())
+            }
+        }
+        .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+
+    // Search and Filters
+    private val _searchQuery = MutableStateFlow("")
+    val searchQuery = _searchQuery.asStateFlow()
+
+    private val _filterCategory = MutableStateFlow<String?>(null)
+    val filterCategory = _filterCategory.asStateFlow()
+    
+    private val _filterType = MutableStateFlow<TransactionType?>(null)
+    val filterType = _filterType.asStateFlow()
+
+    fun setSearchQuery(q: String) { _searchQuery.value = q }
+    fun setFilterCategory(c: String?) { _filterCategory.value = c }
+    fun setFilterType(t: TransactionType?) { _filterType.value = t }
+
+    val filteredTransactions = combine(transactions, _searchQuery, _filterCategory, _filterType) { list, query, category, type ->
+        list.filter { tx ->
+            val matchesQuery = if (query.isBlank()) true else tx.note.contains(query, ignoreCase = true)
+            val matchesCategory = if (category == null || category == "All") true else tx.category == category
+            val matchesType = if (type == null) true else tx.type == type
+            matchesQuery && matchesCategory && matchesType
+        }
+    }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+
+    // Actions
+    fun addTransaction(amount: Double, type: TransactionType, category: String, note: String, date: Date) = viewModelScope.launch {
+        repository.addTransaction(Transaction(amount = amount, type = type, category = category, note = note, timestamp = Timestamp(date)))
+    }
+    
+    fun updateTransaction(tx: Transaction) = viewModelScope.launch {
+        repository.updateTransaction(tx)
+    }
+    
+    fun deleteTransaction(txId: String) = viewModelScope.launch {
+        repository.deleteTransaction(txId)
+    }
+
+    fun addGoal(name: String, amount: Double) = viewModelScope.launch {
+        repository.addGoal(Goal(goalName = name, targetAmount = amount))
+    }
+    
+    fun deleteGoal(goalId: String) = viewModelScope.launch {
+        repository.deleteGoal(goalId)
+    }
+}
+
+sealed class AuthState {
+    object Loading : AuthState()
+    object Authenticated : AuthState()
+    object Unauthenticated : AuthState()
+}

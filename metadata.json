@@ -1,0 +1,6 @@
+{
+  "name": "Pocket Money Tracker",
+  "description": "A personal pocket money tracker focused on tracking income, expenses, savings, and balance.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
