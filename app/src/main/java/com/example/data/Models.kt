@@ -20,6 +20,7 @@ data class Transaction(
     val type: TransactionType = TransactionType.EXPENSE,
     val category: String = "",
     val note: String = "",
+    val paymentMethod: String = "Cash",
     val timestamp: Timestamp = Timestamp(Date())
 )
 
@@ -28,4 +29,16 @@ data class Budget(
     val userId: String = "",
     val category: String = "",
     val amountLimit: Double = 0.0
+)
+
+data class RecurringTransaction(
+    val recurringId: String = "",
+    val userId: String = "",
+    val amount: Double = 0.0,
+    val type: TransactionType = TransactionType.EXPENSE,
+    val category: String = "",
+    val note: String = "",
+    val paymentMethod: String = "Cash",
+    val interval: String = "Monthly", // "Daily", "Weekly", "Monthly", "Yearly"
+    val nextProcessingDate: Timestamp = Timestamp(Date())
 )

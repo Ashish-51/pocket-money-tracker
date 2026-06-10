@@ -23,11 +23,14 @@ fun AddTransactionScreen(viewModel: MainViewModel, onBack: () -> Unit) {
     var note by remember { mutableStateOf("") }
     var type by remember { mutableStateOf(TransactionType.EXPENSE) }
     var category by remember { mutableStateOf("") }
+    var paymentMethod by remember { mutableStateOf("Cash") }
 
     val incomeCategories = listOf("Pocket Money", "Allowance", "Salary", "Gift", "Other")
     val expenseCategories = listOf("Food", "Travel", "Shopping", "Entertainment", "Bills", "Other")
+    val paymentMethods = listOf("Cash", "Card", "UPI", "Bank Transfer")
 
-    var expanded by remember { mutableStateOf(false) }
+    var expandedCategory by remember { mutableStateOf(false) }
+    var expandedPayment by remember { mutableStateOf(false) }
 
     Scaffold(
         containerColor = FintechBackground,
@@ -113,8 +116,8 @@ fun AddTransactionScreen(viewModel: MainViewModel, onBack: () -> Unit) {
             }
 
             ExposedDropdownMenuBox(
-                expanded = expanded,
-                onExpandedChange = { expanded = it }
+                expanded = expandedCategory,
+                onExpandedChange = { expandedCategory = it }
             ) {
                 OutlinedTextField(
                     value = category,
@@ -132,8 +135,8 @@ fun AddTransactionScreen(viewModel: MainViewModel, onBack: () -> Unit) {
                     )
                 )
                 ExposedDropdownMenu(
-                    expanded = expanded,
-                    onDismissRequest = { expanded = false },
+                    expanded = expandedCategory,
+                    onDismissRequest = { expandedCategory = false },
                     modifier = Modifier.background(FintechSurface)
                 ) {
                     currentCategories.forEach { cat ->
@@ -141,7 +144,45 @@ fun AddTransactionScreen(viewModel: MainViewModel, onBack: () -> Unit) {
                             text = { Text(cat, color = FintechOnSurface) },
                             onClick = {
                                 category = cat
-                                expanded = false
+                                expandedCategory = false
+                            }
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+            
+            ExposedDropdownMenuBox(
+                expanded = expandedPayment,
+                onExpandedChange = { expandedPayment = it }
+            ) {
+                OutlinedTextField(
+                    value = paymentMethod,
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Payment Method") },
+                    modifier = Modifier.menuAnchor().fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = FintechOnSurface,
+                        unfocusedTextColor = FintechOnSurfaceVariant,
+                        focusedBorderColor = FintechPrimary,
+                        unfocusedBorderColor = FintechOutline.copy(alpha = 0.3f),
+                        focusedLabelColor = FintechPrimary
+                    )
+                )
+                ExposedDropdownMenu(
+                    expanded = expandedPayment,
+                    onDismissRequest = { expandedPayment = false },
+                    modifier = Modifier.background(FintechSurface)
+                ) {
+                    paymentMethods.forEach { method ->
+                        DropdownMenuItem(
+                            text = { Text(method, color = FintechOnSurface) },
+                            onClick = {
+                                paymentMethod = method
+                                expandedPayment = false
                             }
                         )
                     }
@@ -172,7 +213,7 @@ fun AddTransactionScreen(viewModel: MainViewModel, onBack: () -> Unit) {
                 onClick = {
                     val amt = amountText.toDoubleOrNull() ?: 0.0
                     if (amt > 0) {
-                        viewModel.addTransaction(amt, type, category, note, Date())
+                        viewModel.addTransaction(amt, type, category, note, paymentMethod, Date())
                         onBack()
                     }
                 },

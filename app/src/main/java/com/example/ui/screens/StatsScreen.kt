@@ -2,15 +2,17 @@ package com.example.ui.screens
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -60,6 +62,13 @@ fun StatsScreen(viewModel: MainViewModel) {
 
     val incomeColor = FintechIncome
     val expenseColor = FintechError
+    
+    val expenseByCategory = filteredTransactions
+        .filter { it.type == TransactionType.EXPENSE }
+        .groupBy { it.category }
+        .mapValues { it.value.sumOf { tx -> tx.amount } }
+        .toList()
+        .sortedByDescending { it.second }
 
     Scaffold(
         containerColor = FintechBackground,
@@ -74,6 +83,7 @@ fun StatsScreen(viewModel: MainViewModel) {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
+                .verticalScroll(rememberScrollState())
                 .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -172,6 +182,43 @@ fun StatsScreen(viewModel: MainViewModel) {
                         }
                     }
                 }
+                
+                if (expenseByCategory.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(40.dp))
+                    Text("Expense Breakdown", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = FintechOnSurface, modifier = Modifier.align(Alignment.Start))
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(24.dp),
+                        colors = CardDefaults.cardColors(containerColor = FintechSurface),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, FintechOutline.copy(alpha = 0.1f))
+                    ) {
+                        Column(modifier = Modifier.padding(24.dp)) {
+                            expenseByCategory.forEachIndexed { index, (category, amount) ->
+                                val progress = if (totalExpense > 0) (amount / totalExpense).toFloat() else 0f
+                                Column {
+                                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                        Text(category, fontSize = 14.sp, color = FintechOnSurfaceVariant, fontWeight = FontWeight.Medium)
+                                        Text(viewModel.formatAmount(amount), fontSize = 14.sp, color = FintechOnSurface, fontWeight = FontWeight.Bold)
+                                    }
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    LinearProgressIndicator(
+                                        progress = { progress },
+                                        modifier = Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)),
+                                        color = FintechSecondary,
+                                        trackColor = FintechSecondary.copy(alpha = 0.2f)
+                                    )
+                                }
+                                if (index < expenseByCategory.size - 1) {
+                                    Spacer(modifier = Modifier.height(16.dp))
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                Spacer(modifier = Modifier.height(84.dp))
             }
         }
     }

@@ -84,7 +84,7 @@ sealed class Screen(val route: String, val label: String, val icon: androidx.com
     object History : Screen("history", "History", Icons.Filled.List)
     object Search : Screen("search", "Search", Icons.Filled.Search)
     object Stats : Screen("stats", "Stats", Icons.Filled.PieChart)
-    object Budgets : Screen("budgets", "Budgets", Icons.Filled.Star)
+    object Budgets : Screen("budgets", "Subscriptions", Icons.Filled.Star)
     object Settings : Screen("settings", "Settings", Icons.Filled.Settings)
 }
 

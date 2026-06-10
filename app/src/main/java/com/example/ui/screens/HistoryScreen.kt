@@ -132,7 +132,7 @@ fun TransactionItem(transaction: Transaction, formatter: (Double) -> String, onD
                     if (transaction.note.isNotBlank()) {
                         Text(text = transaction.note, fontSize = 12.sp, color = FintechOnSurfaceVariant, maxLines = 1)
                     }
-                    Text(text = dateStr, fontSize = 12.sp, color = FintechOutline)
+                    Text(text = "$dateStr • ${transaction.paymentMethod}", fontSize = 12.sp, color = FintechOutline)
                 }
             }
             Column(horizontalAlignment = Alignment.End) {

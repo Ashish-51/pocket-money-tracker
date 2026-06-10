@@ -22,6 +22,9 @@ fun SettingsScreen(viewModel: MainViewModel) {
     val userProfile by viewModel.currentUserProfile.collectAsState()
     val email = userProfile?.email ?: ""
 
+    val transactions by viewModel.transactions.collectAsState()
+    val context = androidx.compose.ui.platform.LocalContext.current
+
     Scaffold(
         containerColor = FintechBackground,
         topBar = { 
@@ -104,6 +107,42 @@ fun SettingsScreen(viewModel: MainViewModel) {
                         ) {
                             Text("INR (₹)", fontWeight = FontWeight.Bold)
                         }
+                    }
+                }
+            }
+
+            // Data Export Section
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(containerColor = FintechSurface),
+                border = androidx.compose.foundation.BorderStroke(1.dp, FintechOutline.copy(alpha = 0.1f))
+            ) {
+                Column(modifier = Modifier.padding(20.dp)) {
+                    Text(
+                        text = "Data Management",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = FintechPrimary
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Button(
+                        onClick = {
+                            val data = viewModel.getExportDataString(transactions)
+                            val sendIntent: android.content.Intent = android.content.Intent().apply {
+                                action = android.content.Intent.ACTION_SEND
+                                putExtra(android.content.Intent.EXTRA_TEXT, data)
+                                type = "text/csv"
+                            }
+                            val shareIntent = android.content.Intent.createChooser(sendIntent, "Export Transactions")
+                            context.startActivity(shareIntent)
+                        },
+                        modifier = Modifier.fillMaxWidth().height(48.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = FintechPrimary.copy(alpha = 0.1f), contentColor = FintechPrimary),
+                        elevation = null
+                    ) {
+                        Text("Export Data (CSV)", fontWeight = FontWeight.Bold)
                     }
                 }
             }

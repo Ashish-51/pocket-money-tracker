@@ -28,7 +28,7 @@ import com.example.ui.theme.*
 @Composable
 fun DashboardScreen(viewModel: MainViewModel, onSeeAll: () -> Unit, onAddTransaction: () -> Unit) {
     val transactions by viewModel.transactions.collectAsState()
-    val budgets by viewModel.budgets.collectAsState()
+    val recurring by viewModel.recurringTransactions.collectAsState()
     val userProfile by viewModel.currentUserProfile.collectAsState()
     
     val nameToShow = userProfile?.name ?: "User"
@@ -80,19 +80,21 @@ fun DashboardScreen(viewModel: MainViewModel, onSeeAll: () -> Unit, onAddTransac
             }
             item {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                    ExpenseCard(
+                    StatCard(
                         modifier = Modifier.weight(1f),
-                        amount = totalExpense,
-                        formatter = { viewModel.formatAmountNoDecimals(it) }
+                        title = "Total Transactions",
+                        value = transactions.size.toString(),
+                        icon = "📋",
+                        iconColor = FintechPrimary,
+                        bgColor = FintechSurface
                     )
-                    val firstBudget = budgets.firstOrNull()
-                    val budgetExpense = if (firstBudget != null) {
-                        transactions.filter { it.type == TransactionType.EXPENSE && it.category == firstBudget.category }.sumOf { it.amount }
-                    } else 0.0
-                    BudgetCard(
+                    StatCard(
                         modifier = Modifier.weight(1f),
-                        budget = firstBudget,
-                        spent = budgetExpense
+                        title = "Subscriptions",
+                        value = recurring.size.toString(),
+                        icon = "🔁",
+                        iconColor = FintechSecondary,
+                        bgColor = FintechSecondary.copy(alpha = 0.1f)
                     )
                 }
             }
@@ -211,11 +213,11 @@ fun BalanceCard(
 }
 
 @Composable
-fun ExpenseCard(modifier: Modifier = Modifier, amount: Double, formatter: (Double) -> String) {
+fun StatCard(modifier: Modifier = Modifier, title: String, value: String, icon: String, iconColor: Color, bgColor: Color) {
     Card(
         modifier = modifier.height(140.dp),
         shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = FintechSurface),
+        colors = CardDefaults.cardColors(containerColor = bgColor),
         border = androidx.compose.foundation.BorderStroke(1.dp, FintechOutline.copy(alpha = 0.2f))
     ) {
         Column(
@@ -223,68 +225,21 @@ fun ExpenseCard(modifier: Modifier = Modifier, amount: Double, formatter: (Doubl
             verticalArrangement = Arrangement.SpaceBetween
         ) {
             Box(
-                modifier = Modifier.size(40.dp).clip(RoundedCornerShape(12.dp)).background(FintechError.copy(alpha = 0.1f)),
+                modifier = Modifier.size(40.dp).clip(RoundedCornerShape(12.dp)).background(iconColor.copy(alpha = 0.2f)),
                 contentAlignment = Alignment.Center
             ) {
-                Text("↓", color = FintechError, fontSize = 20.sp)
+                Text(icon, color = iconColor, fontSize = 20.sp)
             }
             Column {
-                Text("Expenses", fontSize = 14.sp, color = FintechOnSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(title, fontSize = 14.sp, color = FintechOnSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis, lineHeight = 18.sp)
                 Text(
-                    text = formatter(amount),
-                    fontSize = 18.sp,
+                    text = value,
+                    fontSize = 24.sp,
                     fontWeight = FontWeight.Bold,
                     color = FintechOnSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-            }
-        }
-    }
-}
-
-@Composable
-fun BudgetCard(modifier: Modifier = Modifier, budget: com.example.data.Budget?, spent: Double) {
-    Card(
-        modifier = modifier.height(140.dp),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = FintechSecondary.copy(alpha = 0.1f)),
-        border = androidx.compose.foundation.BorderStroke(1.dp, FintechSecondary.copy(alpha = 0.3f))
-    ) {
-        Column(
-            modifier = Modifier.fillMaxSize().padding(20.dp),
-            verticalArrangement = Arrangement.SpaceBetween
-        ) {
-            Box(
-                modifier = Modifier.size(40.dp).clip(RoundedCornerShape(12.dp)).background(FintechSecondary.copy(alpha = 0.2f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Text("★", color = FintechSecondary, fontSize = 20.sp)
-            }
-            Column {
-                if (budget != null) {
-                    val progress = if (budget.amountLimit > 0) (spent / budget.amountLimit).toFloat() else 0f
-                    val percentage = (progress.coerceIn(0f, 1f) * 100).toInt()
-                    Text(budget.category + " Budget", fontSize = 14.sp, color = FintechOnSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    Text("$percentage% Spent", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = FintechOnSurface, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    Spacer(modifier = Modifier.height(8.dp))
-                    LinearProgressIndicator(
-                        progress = { progress.coerceIn(0f, 1f) },
-                        modifier = Modifier.fillMaxWidth().height(6.dp).clip(CircleShape),
-                        color = if (progress >= 1f) FintechError else FintechSecondary,
-                        trackColor = FintechSecondary.copy(alpha = 0.2f)
-                    )
-                } else {
-                    Text("Monthly Budget", fontSize = 14.sp, color = FintechOnSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    Text("No Budget", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = FintechOnSurface, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    Spacer(modifier = Modifier.height(8.dp))
-                    LinearProgressIndicator(
-                        progress = { 0f },
-                        modifier = Modifier.fillMaxWidth().height(6.dp).clip(CircleShape),
-                        color = FintechSecondary,
-                        trackColor = FintechSecondary.copy(alpha = 0.2f)
-                    )
-                }
             }
         }
     }
@@ -317,7 +272,7 @@ fun CompactTransactionItem(tx: com.example.data.Transaction, formatter: (Double)
                 }
                 Column {
                     Text(tx.category, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = FintechOnSurface)
-                    Text(if (isIncome) "Income" else "Expense", fontSize = 13.sp, color = FintechOnSurfaceVariant)
+                    Text(tx.paymentMethod, fontSize = 13.sp, color = FintechOnSurfaceVariant)
                 }
             }
             Text(

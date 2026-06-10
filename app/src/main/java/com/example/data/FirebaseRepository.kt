@@ -177,4 +177,37 @@ class FirebaseRepository {
     suspend fun deleteBudget(budgetId: String) {
         db.collection("budgets").document(budgetId).delete().await()
     }
+
+    // Recurring Transactions
+    fun getRecurringTransactions(uid: String): Flow<List<RecurringTransaction>> = callbackFlow {
+        val listener = db.collection("recurring_transactions")
+            .whereEqualTo("userId", uid)
+            .addSnapshotListener { snapshot, e ->
+                 if (e != null) {
+                    trySend(emptyList())
+                    return@addSnapshotListener
+                 }
+                 if (snapshot != null) {
+                    val rtx = snapshot.toObjects(RecurringTransaction::class.java)
+                    trySend(rtx)
+                 }
+            }
+        awaitClose { listener.remove() }
+    }
+
+    suspend fun addRecurringTransaction(rtx: RecurringTransaction) {
+        val uid = currentUserId ?: return
+        val rtxId = UUID.randomUUID().toString()
+        val rtxWithId = rtx.copy(recurringId = rtxId, userId = uid)
+        db.collection("recurring_transactions").document(rtxId).set(rtxWithId).await()
+    }
+
+    suspend fun updateRecurringTransaction(rtx: RecurringTransaction) {
+        if (rtx.recurringId.isEmpty()) return
+        db.collection("recurring_transactions").document(rtx.recurringId).set(rtx).await()
+    }
+
+    suspend fun deleteRecurringTransaction(recurringId: String) {
+        db.collection("recurring_transactions").document(recurringId).delete().await()
+    }
 }
