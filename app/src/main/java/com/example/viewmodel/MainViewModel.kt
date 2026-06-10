@@ -4,7 +4,7 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.data.FirebaseRepository
-import com.example.data.Goal
+import com.example.data.Budget
 import com.example.data.Transaction
 import com.example.data.TransactionType
 import com.example.data.User
@@ -186,10 +186,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
-    val goals: StateFlow<List<Goal>> = _currentUserId
+    val budgets: StateFlow<List<Budget>> = _currentUserId
         .flatMapLatest { uid ->
             if (uid != null) {
-                repository.getGoals(uid)
+                repository.getBudgets(uid)
             } else {
                 flowOf(emptyList())
             }
@@ -232,12 +232,16 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         repository.deleteTransaction(txId)
     }
 
-    fun addGoal(name: String, amount: Double) = viewModelScope.launch {
-        repository.addGoal(Goal(goalName = name, targetAmount = amount))
+    fun deleteAllTransactions() = viewModelScope.launch {
+        repository.deleteAllTransactions()
+    }
+
+    fun addBudget(category: String, amountLimit: Double) = viewModelScope.launch {
+        repository.addBudget(Budget(category = category, amountLimit = amountLimit))
     }
     
-    fun deleteGoal(goalId: String) = viewModelScope.launch {
-        repository.deleteGoal(goalId)
+    fun deleteBudget(budgetId: String) = viewModelScope.launch {
+        repository.deleteBudget(budgetId)
     }
 }
 

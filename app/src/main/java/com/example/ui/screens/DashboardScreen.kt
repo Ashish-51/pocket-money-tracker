@@ -15,6 +15,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -22,11 +23,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.TransactionType
 import com.example.viewmodel.MainViewModel
+import com.example.ui.theme.*
 
 @Composable
-fun DashboardScreen(viewModel: MainViewModel, onAddTransaction: () -> Unit) {
+fun DashboardScreen(viewModel: MainViewModel, onSeeAll: () -> Unit, onAddTransaction: () -> Unit) {
     val transactions by viewModel.transactions.collectAsState()
-    val goals by viewModel.goals.collectAsState()
+    val budgets by viewModel.budgets.collectAsState()
     val userProfile by viewModel.currentUserProfile.collectAsState()
     
     val nameToShow = userProfile?.name ?: "User"
@@ -44,14 +46,14 @@ fun DashboardScreen(viewModel: MainViewModel, onAddTransaction: () -> Unit) {
     val currentBalance = totalIncome - totalExpense
 
     Scaffold(
-        containerColor = MaterialTheme.colorScheme.background,
+        containerColor = FintechBackground,
         floatingActionButton = {
             FloatingActionButton(
                 onClick = onAddTransaction,
-                containerColor = Color(0xFFD0BCFF),
-                contentColor = Color(0xFF381E72),
-                shape = RoundedCornerShape(16.dp),
-                modifier = Modifier.padding(bottom = 8.dp).size(56.dp)
+                containerColor = FintechPrimary,
+                contentColor = FintechOnPrimary,
+                shape = RoundedCornerShape(20.dp),
+                modifier = Modifier.padding(bottom = 8.dp).size(64.dp)
             ) {
                 Icon(Icons.Filled.Add, contentDescription = "Add", modifier = Modifier.size(32.dp))
             }
@@ -61,8 +63,8 @@ fun DashboardScreen(viewModel: MainViewModel, onAddTransaction: () -> Unit) {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .padding(horizontal = 24.dp, vertical = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
             item {
                 HeaderSection(name = nameToShow, initials = initials)
@@ -81,12 +83,16 @@ fun DashboardScreen(viewModel: MainViewModel, onAddTransaction: () -> Unit) {
                     ExpenseCard(
                         modifier = Modifier.weight(1f),
                         amount = totalExpense,
-                        formatter = { viewModel.formatAmount(it) }
+                        formatter = { viewModel.formatAmountNoDecimals(it) }
                     )
-                    SavingsCard(
+                    val firstBudget = budgets.firstOrNull()
+                    val budgetExpense = if (firstBudget != null) {
+                        transactions.filter { it.type == TransactionType.EXPENSE && it.category == firstBudget.category }.sumOf { it.amount }
+                    } else 0.0
+                    BudgetCard(
                         modifier = Modifier.weight(1f),
-                        goal = goals.firstOrNull(),
-                        balance = currentBalance
+                        budget = firstBudget,
+                        spent = budgetExpense
                     )
                 }
             }
@@ -96,9 +102,9 @@ fun DashboardScreen(viewModel: MainViewModel, onAddTransaction: () -> Unit) {
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("Recent Transactions", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
-                    TextButton(onClick = { /* Handle see all */ }) {
-                        Text("See All", fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary, fontSize = 12.sp)
+                    Text("Recent Transactions", fontWeight = FontWeight.Bold, color = FintechOnSurface, fontSize = 18.sp)
+                    TextButton(onClick = onSeeAll) {
+                        Text("See All", fontWeight = FontWeight.SemiBold, color = FintechPrimary, fontSize = 14.sp)
                     }
                 }
             }
@@ -106,7 +112,7 @@ fun DashboardScreen(viewModel: MainViewModel, onAddTransaction: () -> Unit) {
             val recentTxs = transactions.take(5)
             if (recentTxs.isEmpty()) {
                 item {
-                    Text("No transactions yet.", modifier = Modifier.padding(16.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("No transactions yet.", modifier = Modifier.padding(16.dp), color = FintechOutline)
                 }
             } else {
                 items(recentTxs.size) { index ->
@@ -117,7 +123,7 @@ fun DashboardScreen(viewModel: MainViewModel, onAddTransaction: () -> Unit) {
                 }
             }
             item {
-                Spacer(modifier = Modifier.height(72.dp))
+                Spacer(modifier = Modifier.height(100.dp))
             }
         }
     }
@@ -130,19 +136,19 @@ fun HeaderSection(name: String, initials: String) {
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
             Box(
                 modifier = Modifier
-                    .size(40.dp)
+                    .size(48.dp)
                     .clip(CircleShape)
-                    .background(Color(0xFF6750A4)),
+                    .background(Brush.linearGradient(listOf(FintechPrimary, FintechSecondary))),
                 contentAlignment = Alignment.Center
             ) {
-                Text(initials, color = Color.White, fontWeight = FontWeight.SemiBold)
+                Text(initials, color = FintechOnPrimary, fontWeight = FontWeight.Bold, fontSize = 16.sp)
             }
             Column {
-                Text("Welcome back,", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text(name, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onBackground)
+                Text("Welcome back,", fontSize = 14.sp, color = FintechOnSurfaceVariant)
+                Text(name, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = FintechOnSurface)
             }
         }
     }
@@ -156,44 +162,48 @@ fun BalanceCard(
     formatter: (Double) -> String,
     formatterNoDecimals: (Double) -> String
 ) {
+    val gradientBrush = Brush.linearGradient(
+        colors = listOf(FintechSurfaceVariant, FintechSurface)
+    )
+
     Card(
-        modifier = Modifier.fillMaxWidth().height(160.dp),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFEADDFF))
+        modifier = Modifier.fillMaxWidth().height(180.dp),
+        shape = RoundedCornerShape(32.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
     ) {
-        Column(
-            modifier = Modifier.fillMaxSize().padding(24.dp),
-            verticalArrangement = Arrangement.SpaceBetween
+        Box(
+            modifier = Modifier.fillMaxSize().background(gradientBrush).border(1.dp, FintechOutline.copy(alpha = 0.2f), RoundedCornerShape(32.dp))
         ) {
-            Column {
-                Text(text = "Current Balance", fontSize = 14.sp, fontWeight = FontWeight.Medium, color = Color(0xFF21005D))
-                Text(
-                    text = formatter(balance),
-                    fontSize = 36.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF21005D)
-                )
-            }
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Bottom
+            Column(
+                modifier = Modifier.fillMaxSize().padding(24.dp),
+                verticalArrangement = Arrangement.SpaceBetween
             ) {
-                Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                    Column {
-                        Text("TOTAL INCOME", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF49454F))
-                        Text("+" + formatterNoDecimals(income), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFF15803D)) // green-700
-                    }
-                    Column {
-                        Text("TOTAL EXPENSE", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF49454F))
-                        Text("-" + formatterNoDecimals(expense), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFFB91C1C)) // red-700
-                    }
+                Column {
+                    Text(text = "Current Balance", fontSize = 16.sp, fontWeight = FontWeight.Medium, color = FintechOnSurfaceVariant)
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = formatter(balance),
+                        style = MaterialTheme.typography.displayLarge.copy(color = FintechOnSurface),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
                 }
-                Box(
-                    modifier = Modifier.size(40.dp).clip(CircleShape).background(Color(0xFF6750A4)),
-                    contentAlignment = Alignment.Center
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.Bottom
                 ) {
-                    Text("↑", color = Color.White, fontSize = 20.sp)
+                    Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
+                        Column {
+                            Text("INCOME", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = FintechOutline)
+                            Text("+" + formatterNoDecimals(income), fontSize = 16.sp, fontWeight = FontWeight.Bold, color = FintechIncome)
+                        }
+                        Column {
+                            Text("EXPENSE", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = FintechOutline)
+                            Text("-" + formatterNoDecimals(expense), fontSize = 16.sp, fontWeight = FontWeight.Bold, color = FintechError)
+                        }
+                    }
                 }
             }
         }
@@ -203,68 +213,76 @@ fun BalanceCard(
 @Composable
 fun ExpenseCard(modifier: Modifier = Modifier, amount: Double, formatter: (Double) -> String) {
     Card(
-        modifier = modifier.height(128.dp),
+        modifier = modifier.height(140.dp),
         shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFCAC4D0))
+        colors = CardDefaults.cardColors(containerColor = FintechSurface),
+        border = androidx.compose.foundation.BorderStroke(1.dp, FintechOutline.copy(alpha = 0.2f))
     ) {
         Column(
-            modifier = Modifier.fillMaxSize().padding(16.dp),
+            modifier = Modifier.fillMaxSize().padding(20.dp),
             verticalArrangement = Arrangement.SpaceBetween
         ) {
             Box(
-                modifier = Modifier.size(32.dp).clip(RoundedCornerShape(8.dp)).background(Color(0xFFF2B8B5)),
+                modifier = Modifier.size(40.dp).clip(RoundedCornerShape(12.dp)).background(FintechError.copy(alpha = 0.1f)),
                 contentAlignment = Alignment.Center
             ) {
-                Text("↓", color = Color(0xFF601410), fontSize = 16.sp)
+                Text("↓", color = FintechError, fontSize = 20.sp)
             }
             Column {
-                Text("Expenses", fontSize = 12.sp, color = Color(0xFF49454F))
-                Text(formatter(amount), fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                Text("Expenses", fontSize = 14.sp, color = FintechOnSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(
+                    text = formatter(amount),
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = FintechOnSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
             }
         }
     }
 }
 
 @Composable
-fun SavingsCard(modifier: Modifier = Modifier, goal: com.example.data.Goal?, balance: Double) {
+fun BudgetCard(modifier: Modifier = Modifier, budget: com.example.data.Budget?, spent: Double) {
     Card(
-        modifier = modifier.height(128.dp),
+        modifier = modifier.height(140.dp),
         shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFD0BCFF))
+        colors = CardDefaults.cardColors(containerColor = FintechSecondary.copy(alpha = 0.1f)),
+        border = androidx.compose.foundation.BorderStroke(1.dp, FintechSecondary.copy(alpha = 0.3f))
     ) {
         Column(
-            modifier = Modifier.fillMaxSize().padding(16.dp),
+            modifier = Modifier.fillMaxSize().padding(20.dp),
             verticalArrangement = Arrangement.SpaceBetween
         ) {
             Box(
-                modifier = Modifier.size(32.dp).clip(RoundedCornerShape(8.dp)).background(Color(0xFFEADDFF)),
+                modifier = Modifier.size(40.dp).clip(RoundedCornerShape(12.dp)).background(FintechSecondary.copy(alpha = 0.2f)),
                 contentAlignment = Alignment.Center
             ) {
-                Text("★", color = Color(0xFF21005D), fontSize = 16.sp)
+                Text("★", color = FintechSecondary, fontSize = 20.sp)
             }
             Column {
-                if (goal != null) {
-                    val progress = if (goal.targetAmount > 0) (balance / goal.targetAmount).toFloat() else 0f
+                if (budget != null) {
+                    val progress = if (budget.amountLimit > 0) (spent / budget.amountLimit).toFloat() else 0f
                     val percentage = (progress.coerceIn(0f, 1f) * 100).toInt()
-                    Text(goal.goalName, fontSize = 12.sp, color = Color(0xFF21005D), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    Text("$percentage%", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color(0xFF21005D))
+                    Text(budget.category + " Budget", fontSize = 14.sp, color = FintechOnSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text("$percentage% Spent", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = FintechOnSurface, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     Spacer(modifier = Modifier.height(8.dp))
                     LinearProgressIndicator(
                         progress = { progress.coerceIn(0f, 1f) },
                         modifier = Modifier.fillMaxWidth().height(6.dp).clip(CircleShape),
-                        color = Color(0xFF6750A4),
-                        trackColor = Color(0xFFEADDFF)
+                        color = if (progress >= 1f) FintechError else FintechSecondary,
+                        trackColor = FintechSecondary.copy(alpha = 0.2f)
                     )
                 } else {
-                    Text("Savings Goal", fontSize = 12.sp, color = Color(0xFF21005D))
-                    Text("No Goal", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color(0xFF21005D))
+                    Text("Monthly Budget", fontSize = 14.sp, color = FintechOnSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text("No Budget", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = FintechOnSurface, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     Spacer(modifier = Modifier.height(8.dp))
                     LinearProgressIndicator(
                         progress = { 0f },
                         modifier = Modifier.fillMaxWidth().height(6.dp).clip(CircleShape),
-                        color = Color(0xFF6750A4),
-                        trackColor = Color(0xFFEADDFF)
+                        color = FintechSecondary,
+                        trackColor = FintechSecondary.copy(alpha = 0.2f)
                     )
                 }
             }
@@ -276,35 +294,35 @@ fun SavingsCard(modifier: Modifier = Modifier, goal: com.example.data.Goal?, bal
 fun CompactTransactionItem(tx: com.example.data.Transaction, formatter: (Double) -> String) {
     val isIncome = tx.type == TransactionType.INCOME
     val sign = if (isIncome) "+" else "-"
-    val txColor = if (isIncome) Color(0xFF16A34A) else Color(0xFFDC2626) // green-600 : red-600
-    val iconBg = if (isIncome) Color(0xFFDCFCE7) else Color(0xFFFFEDD5) // green-100 : orange-100
+    val txColor = if (isIncome) FintechIncome else FintechError
+    val iconBg = txColor.copy(alpha = 0.15f)
 
     Card(
         modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFF3EDF7))
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = FintechSurface),
+        border = androidx.compose.foundation.BorderStroke(1.dp, FintechOutline.copy(alpha = 0.1f))
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(12.dp),
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+            Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
                 Box(
-                    modifier = Modifier.size(40.dp).clip(RoundedCornerShape(12.dp)).background(iconBg),
+                    modifier = Modifier.size(48.dp).clip(RoundedCornerShape(16.dp)).background(iconBg),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(if (isIncome) "↓" else "↑", color = txColor, fontSize = 20.sp)
+                    Text(if (isIncome) "↑" else "↓", color = txColor, fontSize = 24.sp, fontWeight = FontWeight.Bold)
                 }
                 Column {
-                    Text(tx.category, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.Black)
-                    Text(if (isIncome) "Income" else "Expense", fontSize = 10.sp, color = Color(0xFF49454F))
+                    Text(tx.category, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = FintechOnSurface)
+                    Text(if (isIncome) "Income" else "Expense", fontSize = 13.sp, color = FintechOnSurfaceVariant)
                 }
             }
             Text(
                 "$sign${formatter(tx.amount)}",
-                fontSize = 14.sp,
+                fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
                 color = txColor
             )

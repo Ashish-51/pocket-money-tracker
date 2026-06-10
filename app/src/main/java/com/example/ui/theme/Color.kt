@@ -2,64 +2,103 @@ package com.example.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-val md_theme_light_primary = Color(0xFF6750A4)
-val md_theme_light_onPrimary = Color(0xFFFFFFFF)
-val md_theme_light_primaryContainer = Color(0xFFEADDFF)
-val md_theme_light_onPrimaryContainer = Color(0xFF21005D)
-val md_theme_light_secondary = Color(0xFF625B71)
-val md_theme_light_onSecondary = Color(0xFFFFFFFF)
-val md_theme_light_secondaryContainer = Color(0xFFE8DEF8)
-val md_theme_light_onSecondaryContainer = Color(0xFF1D192B)
-val md_theme_light_tertiary = Color(0xFF7D5260)
-val md_theme_light_onTertiary = Color(0xFFFFFFFF)
-val md_theme_light_tertiaryContainer = Color(0xFFFFD8E4)
-val md_theme_light_onTertiaryContainer = Color(0xFF31111D)
-val md_theme_light_error = Color(0xFFB3261E)
-val md_theme_light_errorContainer = Color(0xFFF9DEDC)
-val md_theme_light_onError = Color(0xFFFFFFFF)
-val md_theme_light_onErrorContainer = Color(0xFF410E0B)
-val md_theme_light_background = Color(0xFFFDF7FF)
-val md_theme_light_onBackground = Color(0xFF1D1B20)
-val md_theme_light_surface = Color(0xFFFDF7FF)
-val md_theme_light_onSurface = Color(0xFF1D1B20)
-val md_theme_light_surfaceVariant = Color(0xFFE7E0EC)
-val md_theme_light_onSurfaceVariant = Color(0xFF49454F)
-val md_theme_light_outline = Color(0xFF79747E)
-val md_theme_light_inverseOnSurface = Color(0xFFF4EFF4)
-val md_theme_light_inverseSurface = Color(0xFF313033)
-val md_theme_light_inversePrimary = Color(0xFFD0BCFF)
+// Premium Fintech Theme Colors
+val FintechPrimary = Color(0xFF00E5A8) // Primary Accent
+val FintechOnPrimary = Color(0xFF0B1020)
+val FintechPrimaryContainer = Color(0xFF00A276)
+val FintechOnPrimaryContainer = Color(0xFFE6FFF6)
+
+val FintechSecondary = Color(0xFF5B8CFF) // Secondary Accent
+val FintechOnSecondary = Color(0xFF0B1020)
+val FintechSecondaryContainer = Color(0xFF1A387E)
+val FintechOnSecondaryContainer = Color(0xFFD6E2FF)
+
+val FintechTertiary = Color(0xFF8B5CF6)
+val FintechOnTertiary = Color(0xFFFFFFFF)
+val FintechTertiaryContainer = Color(0xFF5B21B6)
+val FintechOnTertiaryContainer = Color(0xFFEDE9FE)
+
+val FintechError = Color(0xFFFF6B81) // Expense Color
+val FintechErrorContainer = Color(0xFF931B2A)
+val FintechOnError = Color(0xFFFFFFFF)
+val FintechOnErrorContainer = Color(0xFFFFD1D8)
+
+val FintechBackground = Color(0xFF0B1020)
+val FintechOnBackground = Color(0xFFFFFFFF)
+
+val FintechSurface = Color(0xFF111827) // Main Surface
+val FintechOnSurface = Color(0xFFFFFFFF) // Text Primary
+
+val FintechSurfaceVariant = Color(0xFF1A2238) // Secondary Surface
+val FintechOnSurfaceVariant = Color(0xFFA8B3CF) // Text Secondary
+
+val FintechOutline = Color(0xFF6B7280) // Text Muted / Outline
+val FintechInverseOnSurface = Color(0xFF0B1020)
+val FintechInverseSurface = Color(0xFFFFFFFF)
+val FintechInversePrimary = Color(0xFF00A276)
+
+val FintechWarning = Color(0xFFFFB020)
+val FintechIncome = Color(0xFF22C55E) // Income Color
+
+// Replace the old variables so other screens compile, but they are mapped to the new scheme
+val md_theme_light_primary = FintechPrimary
+val md_theme_light_onPrimary = FintechOnPrimary
+val md_theme_light_primaryContainer = FintechPrimaryContainer
+val md_theme_light_onPrimaryContainer = FintechOnPrimaryContainer
+val md_theme_light_secondary = FintechSecondary
+val md_theme_light_onSecondary = FintechOnSecondary
+val md_theme_light_secondaryContainer = FintechSecondaryContainer
+val md_theme_light_onSecondaryContainer = FintechOnSecondaryContainer
+val md_theme_light_tertiary = FintechTertiary
+val md_theme_light_onTertiary = FintechOnTertiary
+val md_theme_light_tertiaryContainer = FintechTertiaryContainer
+val md_theme_light_onTertiaryContainer = FintechOnTertiaryContainer
+val md_theme_light_error = FintechError
+val md_theme_light_errorContainer = FintechErrorContainer
+val md_theme_light_onError = FintechOnError
+val md_theme_light_onErrorContainer = FintechOnErrorContainer
+val md_theme_light_background = FintechBackground
+val md_theme_light_onBackground = FintechOnBackground
+val md_theme_light_surface = FintechSurface
+val md_theme_light_onSurface = FintechOnSurface
+val md_theme_light_surfaceVariant = FintechSurfaceVariant
+val md_theme_light_onSurfaceVariant = FintechOnSurfaceVariant
+val md_theme_light_outline = FintechOutline
+val md_theme_light_inverseOnSurface = FintechInverseOnSurface
+val md_theme_light_inverseSurface = FintechInverseSurface
+val md_theme_light_inversePrimary = FintechInversePrimary
 val md_theme_light_shadow = Color(0xFF000000)
-val md_theme_light_surfaceTint = Color(0xFF6750A4)
-val md_theme_light_outlineVariant = Color(0xFFCAC4D0)
+val md_theme_light_surfaceTint = FintechPrimary
+val md_theme_light_outlineVariant = FintechSurfaceVariant
 val md_theme_light_scrim = Color(0xFF000000)
 
-val md_theme_dark_primary = Color(0xFFD0BCFF)
-val md_theme_dark_onPrimary = Color(0xFF381E72)
-val md_theme_dark_primaryContainer = Color(0xFF4F378B)
-val md_theme_dark_onPrimaryContainer = Color(0xFFEADDFF)
-val md_theme_dark_secondary = Color(0xFFCCC2DC)
-val md_theme_dark_onSecondary = Color(0xFF332D41)
-val md_theme_dark_secondaryContainer = Color(0xFF4A4458)
-val md_theme_dark_onSecondaryContainer = Color(0xFFE8DEF8)
-val md_theme_dark_tertiary = Color(0xFFEFB8C8)
-val md_theme_dark_onTertiary = Color(0xFF492532)
-val md_theme_dark_tertiaryContainer = Color(0xFF633B48)
-val md_theme_dark_onTertiaryContainer = Color(0xFFFFD8E4)
-val md_theme_dark_error = Color(0xFFF2B8B5)
-val md_theme_dark_errorContainer = Color(0xFF8C1D18)
-val md_theme_dark_onError = Color(0xFF601410)
-val md_theme_dark_onErrorContainer = Color(0xFFF9DEDC)
-val md_theme_dark_background = Color(0xFF141218)
-val md_theme_dark_onBackground = Color(0xFFE6E0E9)
-val md_theme_dark_surface = Color(0xFF141218)
-val md_theme_dark_onSurface = Color(0xFFE6E0E9)
-val md_theme_dark_surfaceVariant = Color(0xFF49454F)
-val md_theme_dark_onSurfaceVariant = Color(0xFFCAC4D0)
-val md_theme_dark_outline = Color(0xFF938F99)
-val md_theme_dark_inverseOnSurface = Color(0xFF141218)
-val md_theme_dark_inverseSurface = Color(0xFFE6E0E9)
-val md_theme_dark_inversePrimary = Color(0xFF6750A4)
+val md_theme_dark_primary = FintechPrimary
+val md_theme_dark_onPrimary = FintechOnPrimary
+val md_theme_dark_primaryContainer = FintechPrimaryContainer
+val md_theme_dark_onPrimaryContainer = FintechOnPrimaryContainer
+val md_theme_dark_secondary = FintechSecondary
+val md_theme_dark_onSecondary = FintechOnSecondary
+val md_theme_dark_secondaryContainer = FintechSecondaryContainer
+val md_theme_dark_onSecondaryContainer = FintechOnSecondaryContainer
+val md_theme_dark_tertiary = FintechTertiary
+val md_theme_dark_onTertiary = FintechOnTertiary
+val md_theme_dark_tertiaryContainer = FintechTertiaryContainer
+val md_theme_dark_onTertiaryContainer = FintechOnTertiaryContainer
+val md_theme_dark_error = FintechError
+val md_theme_dark_errorContainer = FintechErrorContainer
+val md_theme_dark_onError = FintechOnError
+val md_theme_dark_onErrorContainer = FintechOnErrorContainer
+val md_theme_dark_background = FintechBackground
+val md_theme_dark_onBackground = FintechOnBackground
+val md_theme_dark_surface = FintechSurface
+val md_theme_dark_onSurface = FintechOnSurface
+val md_theme_dark_surfaceVariant = FintechSurfaceVariant
+val md_theme_dark_onSurfaceVariant = FintechOnSurfaceVariant
+val md_theme_dark_outline = FintechOutline
+val md_theme_dark_inverseOnSurface = FintechInverseOnSurface
+val md_theme_dark_inverseSurface = FintechInverseSurface
+val md_theme_dark_inversePrimary = FintechInversePrimary
 val md_theme_dark_shadow = Color(0xFF000000)
-val md_theme_dark_surfaceTint = Color(0xFFD0BCFF)
-val md_theme_dark_outlineVariant = Color(0xFF49454F)
+val md_theme_dark_surfaceTint = FintechPrimary
+val md_theme_dark_outlineVariant = FintechSurfaceVariant
 val md_theme_dark_scrim = Color(0xFF000000)

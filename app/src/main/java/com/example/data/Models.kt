@@ -23,9 +23,9 @@ data class Transaction(
     val timestamp: Timestamp = Timestamp(Date())
 )
 
-data class Goal(
-    val goalId: String = "",
+data class Budget(
+    val budgetId: String = "",
     val userId: String = "",
-    val goalName: String = "",
-    val targetAmount: Double = 0.0
+    val category: String = "",
+    val amountLimit: Double = 0.0
 )

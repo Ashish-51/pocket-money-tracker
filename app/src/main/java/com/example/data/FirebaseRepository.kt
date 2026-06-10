@@ -134,9 +134,25 @@ class FirebaseRepository {
         db.collection("transactions").document(transactionId).delete().await()
     }
 
-    // Goals
-    fun getGoals(uid: String): Flow<List<Goal>> = callbackFlow {
-        val listener = db.collection("goals")
+    suspend fun deleteAllTransactions() {
+        val uid = currentUserId ?: return
+        try {
+            val snapshot = db.collection("transactions").whereEqualTo("userId", uid).get().await()
+            if (!snapshot.isEmpty) {
+                val batch = db.batch()
+                for (doc in snapshot.documents) {
+                    batch.delete(doc.reference)
+                }
+                batch.commit().await()
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    // Budgets
+    fun getBudgets(uid: String): Flow<List<Budget>> = callbackFlow {
+        val listener = db.collection("budgets")
             .whereEqualTo("userId", uid)
             .addSnapshotListener { snapshot, e ->
                  if (e != null) {
@@ -144,21 +160,21 @@ class FirebaseRepository {
                     return@addSnapshotListener
                  }
                  if (snapshot != null) {
-                    val goals = snapshot.toObjects(Goal::class.java)
-                    trySend(goals)
+                    val budgets = snapshot.toObjects(Budget::class.java)
+                    trySend(budgets)
                  }
             }
         awaitClose { listener.remove() }
     }
 
-    suspend fun addGoal(goal: Goal) {
+    suspend fun addBudget(budget: Budget) {
         val uid = currentUserId ?: return
-        val goalId = UUID.randomUUID().toString()
-        val goalWithId = goal.copy(goalId = goalId, userId = uid)
-        db.collection("goals").document(goalId).set(goalWithId).await()
+        val budgetId = UUID.randomUUID().toString()
+        val budgetWithId = budget.copy(budgetId = budgetId, userId = uid)
+        db.collection("budgets").document(budgetId).set(budgetWithId).await()
     }
 
-    suspend fun deleteGoal(goalId: String) {
-        db.collection("goals").document(goalId).delete().await()
+    suspend fun deleteBudget(budgetId: String) {
+        db.collection("budgets").document(budgetId).delete().await()
     }
 }

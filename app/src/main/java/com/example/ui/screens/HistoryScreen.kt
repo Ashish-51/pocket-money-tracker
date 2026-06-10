@@ -1,19 +1,29 @@
 package com.example.ui.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.data.Transaction
 import com.example.data.TransactionType
 import com.example.viewmodel.MainViewModel
+import com.example.ui.theme.*
 import java.text.SimpleDateFormat
 import java.util.Locale
 
@@ -21,19 +31,69 @@ import java.util.Locale
 @Composable
 fun HistoryScreen(viewModel: MainViewModel) {
     val transactions by viewModel.transactions.collectAsState()
+    var showResetDialog by remember { mutableStateOf(false) }
+
+    if (showResetDialog) {
+        AlertDialog(
+            onDismissRequest = { showResetDialog = false },
+            containerColor = FintechSurface,
+            titleContentColor = FintechOnSurface,
+            textContentColor = FintechOnSurfaceVariant,
+            title = { Text("Reset All Transactions", fontWeight = FontWeight.Bold) },
+            text = { Text("Are you sure you want to delete all transactions? This cannot be undone.") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.deleteAllTransactions()
+                        showResetDialog = false
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = FintechError.copy(alpha = 0.1f), contentColor = FintechError),
+                    elevation = null
+                ) {
+                    Text("Delete All", fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showResetDialog = false },
+                    colors = ButtonDefaults.textButtonColors(contentColor = FintechOnSurfaceVariant)
+                ) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text("Transaction History") }) }
+        containerColor = FintechBackground,
+        topBar = { 
+            TopAppBar(
+                title = { Text("Transaction History", fontWeight = FontWeight.Bold, color = FintechOnSurface) },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = FintechBackground),
+                actions = {
+                    if (transactions.isNotEmpty()) {
+                        IconButton(onClick = { showResetDialog = true }) {
+                            Icon(Icons.Filled.Delete, contentDescription = "Reset All", tint = FintechError.copy(alpha = 0.8f))
+                        }
+                    }
+                }
+            ) 
+        }
     ) { padding ->
         if (transactions.isEmpty()) {
-            Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = androidx.compose.ui.Alignment.Center) {
-                Text("No transactions found.", style = MaterialTheme.typography.bodyLarge)
+            Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
+                Text("No transactions found.", color = FintechOutline, fontSize = 16.sp)
             }
         } else {
-            LazyColumn(modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp)) {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                item { Spacer(modifier = Modifier.height(8.dp)) }
                 items(transactions) { tx ->
                     TransactionItem(tx, formatter = { viewModel.formatAmount(it) }, onDelete = { viewModel.deleteTransaction(tx.transactionId) })
                 }
+                item { Spacer(modifier = Modifier.height(24.dp)) }
             }
         }
     }
@@ -44,26 +104,47 @@ fun TransactionItem(transaction: Transaction, formatter: (Double) -> String, onD
     val dateFormatter = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
     val dateStr = transaction.timestamp.toDate().let { dateFormatter.format(it) }
 
+    val isIncome = transaction.type == TransactionType.INCOME
+    val sign = if (isIncome) "+" else "-"
+    val txColor = if (isIncome) FintechIncome else FintechError
+    val iconBg = txColor.copy(alpha = 0.15f)
+
     Card(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+        modifier = Modifier.fillMaxWidth().height(100.dp),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = FintechSurface),
+        border = androidx.compose.foundation.BorderStroke(1.dp, FintechOutline.copy(alpha = 0.1f))
     ) {
-        Row(modifier = Modifier.padding(16.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(text = transaction.category, style = MaterialTheme.typography.titleMedium)
-                if (transaction.note.isNotBlank()) {
-                    Text(text = transaction.note, style = MaterialTheme.typography.bodyMedium)
+        Row(
+            modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+                Box(
+                    modifier = Modifier.size(48.dp).clip(RoundedCornerShape(16.dp)).background(iconBg),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(if (isIncome) "↑" else "↓", color = txColor, fontSize = 24.sp, fontWeight = FontWeight.Bold)
                 }
-                Text(text = dateStr, style = MaterialTheme.typography.labelSmall)
+                Column {
+                    Text(text = transaction.category, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = FintechOnSurface)
+                    if (transaction.note.isNotBlank()) {
+                        Text(text = transaction.note, fontSize = 12.sp, color = FintechOnSurfaceVariant, maxLines = 1)
+                    }
+                    Text(text = dateStr, fontSize = 12.sp, color = FintechOutline)
+                }
             }
-            Column(horizontalAlignment = androidx.compose.ui.Alignment.End) {
+            Column(horizontalAlignment = Alignment.End) {
                 Text(
-                    text = "${if (transaction.type == TransactionType.INCOME) "+" else "-"}${formatter(transaction.amount)}",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = if (transaction.type == TransactionType.INCOME) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+                    text = "$sign${formatter(transaction.amount)}",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = txColor
                 )
-                IconButton(onClick = onDelete) {
-                    Icon(Icons.Filled.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error)
+                Spacer(modifier = Modifier.height(4.dp))
+                IconButton(onClick = onDelete, modifier = Modifier.size(24.dp)) {
+                    Icon(Icons.Filled.Delete, contentDescription = "Delete", tint = FintechError.copy(alpha = 0.6f), modifier = Modifier.size(20.dp))
                 }
             }
         }
